@@ -49,7 +49,7 @@
         <button class="btn" onclick="clearCanvas()">キャンバスを消す</button>
         <button class="btn" onclick="toggleFullScreen()">全画面モード</button>
     </div>
-    <canvas id="canvas" width="800" height="600"></canvas>
+    <canvas id="canvas"></canvas>
 
     <script>
         // キャンバスと描画コンテキスト
@@ -162,6 +162,25 @@
             }
         }
 
+        // キャンバスサイズを調整
+        function resizeCanvas() {
+            if (document.fullscreenElement) {
+                // 全画面モード時は、ブラウザのウィンドウサイズに合わせてキャンバスをリサイズ
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            } else {
+                // 全画面でない時、元のサイズに戻す
+                canvas.width = 800;
+                canvas.height = 600;
+            }
+        }
+
+        // 全画面モードの変更を監視
+        document.addEventListener('fullscreenchange', resizeCanvas);
+        document.addEventListener('webkitfullscreenchange', resizeCanvas);
+        document.addEventListener('mozfullscreenchange', resizeCanvas);
+        document.addEventListener('MSFullscreenChange', resizeCanvas);
+
         // イベントリスナー
         canvas.addEventListener("mousedown", startPosition);
         canvas.addEventListener("mouseup", endPosition);
@@ -172,6 +191,9 @@
         canvas.addEventListener("touchstart", startPosition);
         canvas.addEventListener("touchend", endPosition);
         canvas.addEventListener("touchmove", draw);
+
+        // 初期のキャンバスサイズ設定
+        resizeCanvas();
     </script>
 </body>
 </html>
