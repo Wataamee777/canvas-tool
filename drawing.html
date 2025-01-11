@@ -36,9 +36,6 @@
         .fullscreen-btn {
             margin-top: 10px;
         }
-        .hidden {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -48,6 +45,7 @@
         <button class="btn" onclick="changeSize()">ペンの太さ</button>
         <button class="btn" onclick="clearCanvas()">キャンバスを消す</button>
         <button class="btn" onclick="toggleFullScreen()">全画面モード</button>
+        <button class="btn" onclick="saveCanvas()">保存</button>
     </div>
     <canvas id="canvas"></canvas>
 
@@ -76,11 +74,9 @@
             painting = true;
             const position = getCanvasPosition();
             if (e.touches) {
-                // タッチイベントの場合
                 lastX = e.touches[0].clientX - position.left;
                 lastY = e.touches[0].clientY - position.top;
             } else {
-                // マウスイベントの場合
                 lastX = e.clientX - position.left;
                 lastY = e.clientY - position.top;
             }
@@ -100,11 +96,9 @@
             let mouseX, mouseY;
 
             if (e.touches) {
-                // タッチイベントの場合
                 mouseX = e.touches[0].clientX - position.left;
                 mouseY = e.touches[0].clientY - position.top;
             } else {
-                // マウスイベントの場合
                 mouseX = e.clientX - position.left;
                 mouseY = e.clientY - position.top;
             }
@@ -114,27 +108,30 @@
             ctx.strokeStyle = penColor;
 
             ctx.beginPath();
-            ctx.moveTo(lastX, lastY); // 前回の位置から描画開始
+            ctx.moveTo(lastX, lastY);
             ctx.lineTo(mouseX, mouseY);
             ctx.stroke();
 
-            lastX = mouseX; // 現在の位置を保存
+            lastX = mouseX;
             lastY = mouseY;
         }
 
         // ペンの色変更
         function changeColor() {
             penColor = prompt("新しいペンの色を入力（例: #ff0000）", penColor);
+            document.cookie = `penColor=${penColor}; path=/;`;
         }
 
         // ペンの太さ変更
         function changeSize() {
             penSize = parseInt(prompt("ペンの太さを入力（例: 5）", penSize));
+            document.cookie = `penSize=${penSize}; path=/;`;
         }
 
         // キャンバスを消す
         function clearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.cookie = "canvasData=; path=/;"; // キャンバスデータのクッキーを削除
         }
 
         // 全画面モードのトグル
@@ -142,40 +139,65 @@
             if (!document.fullscreenElement) {
                 if (canvas.requestFullscreen) {
                     canvas.requestFullscreen();
-                } else if (canvas.mozRequestFullScreen) { // Firefox
+                } else if (canvas.mozRequestFullScreen) {
                     canvas.mozRequestFullScreen();
-                } else if (canvas.webkitRequestFullscreen) { // Chrome, Safari and Opera
+                } else if (canvas.webkitRequestFullscreen) {
                     canvas.webkitRequestFullscreen();
-                } else if (canvas.msRequestFullscreen) { // IE/Edge
+                } else if (canvas.msRequestFullscreen) {
                     canvas.msRequestFullscreen();
                 }
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
-                } else if (document.mozCancelFullScreen) { // Firefox
+                } else if (document.mozCancelFullScreen) {
                     document.mozCancelFullScreen();
-                } else if (document.webkitExitFullscreen) { // Chrome, Safari and Opera
+                } else if (document.webkitExitFullscreen) {
                     document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) { // IE/Edge
+                } else if (document.msExitFullscreen) {
                     document.msExitFullscreen();
                 }
             }
         }
 
-        // キャンバスサイズを調整
+        // キャンバスを保存
+        function saveCanvas() {
+            const canvasData = canvas.toDataURL();
+            document.cookie = `canvasData=${canvasData}; path=/;`; // キャンバス画像データを保存
+        }
+
+        // クッキーから設定を読み込み
+        function loadSettings() {
+            const cookies = document.cookie.split(';');
+            cookies.forEach(cookie => {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'penColor') {
+                    penColor = value;
+                } else if (name === 'penSize') {
+                    penSize = parseInt(value);
+                } else if (name === 'canvasData') {
+                    const img = new Image();
+                    img.src = value;
+                    img.onload = function() {
+                        ctx.drawImage(img, 0, 0);
+                    };
+                }
+            });
+        }
+
+        // 初期設定の読み込み
+        loadSettings();
+
+        // キャンバスサイズの設定
         function resizeCanvas() {
             if (document.fullscreenElement) {
-                // 全画面モード時は、ブラウザのウィンドウサイズに合わせてキャンバスをリサイズ
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
             } else {
-                // 全画面でない時、元のサイズに戻す
                 canvas.width = 800;
                 canvas.height = 600;
             }
         }
 
-        // 全画面モードの変更を監視
         document.addEventListener('fullscreenchange', resizeCanvas);
         document.addEventListener('webkitfullscreenchange', resizeCanvas);
         document.addEventListener('mozfullscreenchange', resizeCanvas);
@@ -185,14 +207,13 @@
         canvas.addEventListener("mousedown", startPosition);
         canvas.addEventListener("mouseup", endPosition);
         canvas.addEventListener("mousemove", draw);
-        canvas.addEventListener("mouseleave", endPosition);  // キャンバス外に出た時に描画終了
+        canvas.addEventListener("mouseleave", endPosition);
 
-        // タッチイベントの追加
+        // タッチイベント
         canvas.addEventListener("touchstart", startPosition);
         canvas.addEventListener("touchend", endPosition);
         canvas.addEventListener("touchmove", draw);
 
-        // 初期のキャンバスサイズ設定
         resizeCanvas();
     </script>
 </body>
