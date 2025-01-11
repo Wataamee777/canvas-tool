@@ -59,11 +59,31 @@
         let painting = false;
         let penColor = "#000000";
         let penSize = 5;
+        let lastX = 0;
+        let lastY = 0;
+
+        // キャンバスの位置を取得
+        function getCanvasPosition() {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                left: rect.left,
+                top: rect.top
+            };
+        }
 
         // 描画開始
         function startPosition(e) {
             painting = true;
-            draw(e);
+            const position = getCanvasPosition();
+            if (e.touches) {
+                // タッチイベントの場合
+                lastX = e.touches[0].clientX - position.left;
+                lastY = e.touches[0].clientY - position.top;
+            } else {
+                // マウスイベントの場合
+                lastX = e.clientX - position.left;
+                lastY = e.clientY - position.top;
+            }
         }
 
         // 描画終了
@@ -75,14 +95,31 @@
         // 描画
         function draw(e) {
             if (!painting) return;
+
+            const position = getCanvasPosition();
+            let mouseX, mouseY;
+
+            if (e.touches) {
+                // タッチイベントの場合
+                mouseX = e.touches[0].clientX - position.left;
+                mouseY = e.touches[0].clientY - position.top;
+            } else {
+                // マウスイベントの場合
+                mouseX = e.clientX - position.left;
+                mouseY = e.clientY - position.top;
+            }
+
             ctx.lineWidth = penSize;
             ctx.lineCap = "round";
             ctx.strokeStyle = penColor;
 
-            ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-            ctx.stroke();
             ctx.beginPath();
-            ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+            ctx.moveTo(lastX, lastY); // 前回の位置から描画開始
+            ctx.lineTo(mouseX, mouseY);
+            ctx.stroke();
+
+            lastX = mouseX; // 現在の位置を保存
+            lastY = mouseY;
         }
 
         // ペンの色変更
@@ -129,17 +166,12 @@
         canvas.addEventListener("mousedown", startPosition);
         canvas.addEventListener("mouseup", endPosition);
         canvas.addEventListener("mousemove", draw);
+        canvas.addEventListener("mouseleave", endPosition);  // キャンバス外に出た時に描画終了
 
-        // 全画面モード時にキャンバスのサイズを調整する
-        document.addEventListener("fullscreenchange", () => {
-            if (document.fullscreenElement) {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            } else {
-                canvas.width = 800;
-                canvas.height = 600;
-            }
-        });
+        // タッチイベントの追加
+        canvas.addEventListener("touchstart", startPosition);
+        canvas.addEventListener("touchend", endPosition);
+        canvas.addEventListener("touchmove", draw);
     </script>
 </body>
 </html>
