@@ -68,6 +68,19 @@
         button:hover {
             background-color: #0056b3;
         }
+        .tool-btn {
+            margin-top: 10px;
+            padding: 5px 15px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .tool-btn:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
@@ -76,6 +89,11 @@
     <input type="color" id="colorPicker" value="#000000">
     <label for="sizePicker">ペンの太さ:</label>
     <input type="number" id="sizePicker" min="1" max="50" value="5">
+
+    <!-- ツール切り替えボタン -->
+    <button id="penTool" class="tool-btn">ペンツール</button>
+    <button id="eraserTool" class="tool-btn">消しゴムツール</button>
+    <button id="stampTool" class="tool-btn">スタンプツール</button>
     
     <label for="imageUpload" class="custom-file-upload">
         画像をアップロード
@@ -90,7 +108,31 @@
         const ctx = canvas.getContext('2d');
         const colorPicker = document.getElementById('colorPicker');
         const sizePicker = document.getElementById('sizePicker');
+        const penToolBtn = document.getElementById('penTool');
+        const eraserToolBtn = document.getElementById('eraserTool');
+        const stampToolBtn = document.getElementById('stampTool');
         let drawing = false;
+        let eraserMode = false;  // 消しゴムモード
+        let stampMode = false;   // スタンプモード
+        let stampImage = null;   // スタンプ画像
+
+        // ペンと消しゴムのツール切り替え
+        penToolBtn.addEventListener('click', function() {
+            eraserMode = false;
+            stampMode = false;
+            ctx.globalCompositeOperation = 'source-over'; // 通常の描画
+        });
+
+        eraserToolBtn.addEventListener('click', function() {
+            eraserMode = true;
+            stampMode = false;
+            ctx.globalCompositeOperation = 'destination-out'; // 消しゴムモード
+        });
+
+        stampToolBtn.addEventListener('click', function() {
+            stampMode = true;
+            eraserMode = false;
+        });
 
         // マウスイベント
         canvas.addEventListener('mousedown', startDrawing);
@@ -120,25 +162,25 @@
         function draw(e) {
             if (!drawing) return;
 
-            if (e.type === 'touchmove') {
-                e.preventDefault();
-                const touchPos = getTouchPos(canvas, e);
-                ctx.lineTo(touchPos.x, touchPos.y);
-            } else {
-                ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+            let posX, posY;
+            if (e.type === 'touchmove' || e.type === 'mousedown') {
+                const pos = e.type === 'touchmove' ? getTouchPos(canvas, e) : { x: e.clientX - canvas.offsetLeft, y: e.clientY - canvas.offsetTop };
+                posX = pos.x;
+                posY = pos.y;
             }
 
-            ctx.lineWidth = sizePicker.value;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = colorPicker.value;
-
-            ctx.stroke();
-            ctx.beginPath();
-            if (e.type === 'touchmove') {
-                const touchPos = getTouchPos(canvas, e);
-                ctx.moveTo(touchPos.x, touchPos.y);
+            if (stampMode && stampImage) {
+                // スタンプ画像を描画
+                ctx.drawImage(stampImage, posX - stampImage.width / 2, posY - stampImage.height / 2);
             } else {
-                ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+                ctx.lineWidth = sizePicker.value;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = eraserMode ? '#ffffff' : colorPicker.value;
+
+                ctx.lineTo(posX, posY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(posX, posY);
             }
         }
 
@@ -162,6 +204,22 @@
                     const img = new Image();
                     img.onload = function() {
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // スタンプ画像を選択
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        stampImage = img;
                     };
                     img.src = event.target.result;
                 };
