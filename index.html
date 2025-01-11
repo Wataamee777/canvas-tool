@@ -9,281 +9,68 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
+            background-color: #f4f4f9;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #f4f4f9;
         }
         h1 {
             color: #333;
         }
-        label {
-            margin-top: 10px;
-            font-size: 16px;
+        p {
+            font-size: 18px;
             color: #333;
+            line-height: 1.6;
         }
-        input[type="color"],
-        input[type="number"] {
-            margin-top: 5px;
-            margin-bottom: 20px;
-            padding: 5px;
-            font-size: 14px;
+        ul {
+            font-size: 18px;
+            color: #333;
+            line-height: 1.6;
         }
-        input[type="file"] {
-            display: none;
-        }
-        .custom-file-upload {
-            margin-top: 5px;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: #fff;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            text-align: center;
-            transition: background-color 0.3s;
-            display: inline-block;
-        }
-        .custom-file-upload:hover {
-            background-color: #0056b3;
-        }
-        canvas {
-            border: 2px solid #007bff;
-            border-radius: 10px;
-            margin-top: 20px;
-            background-color: #fff;
-        }
-        button {
+        .btn {
             margin-top: 20px;
             padding: 10px 20px;
             background-color: #007bff;
             color: #fff;
-            border: none;
             border-radius: 5px;
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        button:hover {
+        .btn:hover {
             background-color: #0056b3;
         }
-        .tool-btn {
-            margin-top: 10px;
-            padding: 5px 15px;
-            background-color: #28a745;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
+        .footer {
+            margin-top: 40px;
             font-size: 14px;
-            cursor: pointer;
-        }
-        .tool-btn:hover {
-            background-color: #218838;
+            color: #333;
         }
     </style>
 </head>
 <body>
-    <h1>絵を描くアプリ</h1>
-    <label for="colorPicker">ペンの色:</label>
-    <input type="color" id="colorPicker" value="#000000">
-    <label for="sizePicker">ペンの太さ:</label>
-    <input type="number" id="sizePicker" min="1" max="50" value="5">
-
-    <!-- ツール切り替えボタン -->
-    <button id="penTool" class="tool-btn">ペンツール</button>
-    <button id="eraserTool" class="tool-btn">消しゴムツール</button>
-    <button id="stampTool" class="tool-btn">スタンプツール</button>
+    <h1>canvas-tools</h1>
+    <p>このツールは、ブラウザ上で絵を描くためのアプリケーションです。以下の機能があります：</p>
+    <ul>
+        <li><strong>ペンツール:</strong> 自由に線を描くことができます。</li>
+        <li><strong>消しゴムツール:</strong> 描いた線を消すことができます。</li>
+        <li><strong>スタンプツール:</strong> ユーザーがアップロードした画像をスタンプとして使用できます。</li>
+        <li><strong>背景画像のアップロード:</strong> ユーザーが選択した画像をキャンバスの背景として使用できます。</li>
+        <li><strong>クッキー保存:</strong> ペンの色や太さ、描いた内容をブラウザのクッキーに保存し、次回訪問時に復元されます。保存期間は7日間です。</li>
+    </ul>
+    <p>以下のボタンから、描画ツールにアクセスできます。</p>
+    <button class="btn" onclick="window.location.href='drawing.html'">絵を描く</button>
+    <p>ブラウザがサポートする限り、絵を描くことができます。描いた内容は、ページをリロードしたり閉じたりしても保存され、後で続けて描けるようになっています。</p>
+    <p><strong>注意:</strong> クッキーは7日間保存され、7日経過後に自動的に削除されます。</p>
     
-    <label for="imageUpload" class="custom-file-upload">
-        背景画像をアップロード
-    </label>
-    <input type="file" id="imageUpload" accept="image/*">
-    
-    <label for="stampUpload" class="custom-file-upload">
-        スタンプ画像をアップロード
-    </label>
-    <input type="file" id="stampUpload" accept="image/*">
-    
-    <canvas id="drawingCanvas" width="500" height="500"></canvas>
-    <button id="downloadBtn">PNGをダウンロード</button>
-
-    <script>
-        const canvas = document.getElementById('drawingCanvas');
-        const ctx = canvas.getContext('2d');
-        const colorPicker = document.getElementById('colorPicker');
-        const sizePicker = document.getElementById('sizePicker');
-        const penToolBtn = document.getElementById('penTool');
-        const eraserToolBtn = document.getElementById('eraserTool');
-        const stampToolBtn = document.getElementById('stampTool');
-        let drawing = false;
-        let eraserMode = false;  // 消しゴムモード
-        let stampMode = false;   // スタンプモード
-        let stampImage = null;   // スタンプ画像
-
-        // ペンと消しゴムのツール切り替え
-        penToolBtn.addEventListener('click', function() {
-            eraserMode = false;
-            stampMode = false;
-            ctx.globalCompositeOperation = 'source-over'; // 通常の描画
-        });
-
-        eraserToolBtn.addEventListener('click', function() {
-            eraserMode = true;
-            stampMode = false;
-            ctx.globalCompositeOperation = 'destination-out'; // 消しゴムモード
-        });
-
-        stampToolBtn.addEventListener('click', function() {
-            stampMode = true;
-            eraserMode = false;
-        });
-
-        // マウスイベント
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', stopDrawing);
-        canvas.addEventListener('mouseout', stopDrawing);
-
-        // タッチイベント
-        canvas.addEventListener('touchstart', startDrawing);
-        canvas.addEventListener('touchmove', draw);
-        canvas.addEventListener('touchend', stopDrawing);
-
-        function getTouchPos(canvas, touchEvent) {
-            const rect = canvas.getBoundingClientRect();
-            const touch = touchEvent.touches[0];
-            return {
-                x: touch.clientX - rect.left,
-                y: touch.clientY - rect.top
-            };
-        }
-
-        function startDrawing(e) {
-            drawing = true;
-            draw(e);
-        }
-
-        function draw(e) {
-            if (!drawing) return;
-
-            let posX, posY;
-            if (e.type === 'touchmove' || e.type === 'mousedown') {
-                const pos = e.type === 'touchmove' ? getTouchPos(canvas, e) : { x: e.clientX - canvas.offsetLeft, y: e.clientY - canvas.offsetTop };
-                posX = pos.x;
-                posY = pos.y;
-            }
-
-            if (stampMode && stampImage) {
-                // スタンプ画像を描画
-                ctx.drawImage(stampImage, posX - stampImage.width / 2, posY - stampImage.height / 2);
-            } else {
-                ctx.lineWidth = sizePicker.value;
-                ctx.lineCap = 'round';
-                ctx.strokeStyle = eraserMode ? '#ffffff' : colorPicker.value;
-
-                ctx.lineTo(posX, posY);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(posX, posY);
-            }
-        }
-
-        function stopDrawing() {
-            drawing = false;
-            ctx.beginPath();
-        }
-
-        // ダウンロードボタン
-        document.getElementById('downloadBtn').addEventListener('click', function() {
-            const link = document.createElement('a');
-            link.download = 'drawing.png';
-            link.href = canvas.toDataURL();
-            link.click();
-        });
-
-        // 背景画像のアップロード
-        document.getElementById('imageUpload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = new Image();
-                    img.onload = function() {
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // スタンプ画像のアップロード
-        document.getElementById('stampUpload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = new Image();
-                    img.onload = function() {
-                        stampImage = img;
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // クッキーに保存する関数
-        function setCookie(name, value, days) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
-        }
-
-        // クッキーから取得する関数
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
-
-        // 初期設定の読み込み（クッキーから）
-        window.onload = function() {
-            const color = getCookie('penColor');
-            const size = getCookie('penSize');
-            const image = getCookie('canvasImage');
-
-            if (color) colorPicker.value = color;
-            if (size) sizePicker.value = size;
-            if (image) {
-                const img = new Image();
-                img.onload = function() {
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                };
-                img.src = image;
-            }
-        };
-
-        // 色と太さを変更したときに保存
-        colorPicker.addEventListener('input', function() {
-            setCookie('penColor', colorPicker.value, 7);
-        });
-        sizePicker.addEventListener('input', function() {
-            setCookie('penSize', sizePicker.value, 7);
-        });
-
-        // 描画を終了したときにクッキーに保存
-        window.addEventListener('beforeunload', function() {
-            setCookie('penColor', colorPicker.value, 7);
-            setCookie('penSize', sizePicker.value, 7);
-            setCookie('canvasImage', canvas.toDataURL(), 7); // 描画内容をクッキーに保存
-        });
-    </script>
+    <div class="footer">
+        <p><strong>クッキーをサポートする代表的なブラウザ:</strong></p>
+        <ul>
+            <li>Google Chrome</li>
+            <li>Mozilla Firefox</li>
+            <li>Safari</li>
+            <li>Microsoft Edge</li>
+            <li>Opera</li>
+        </ul>
+    </div>
 </body>
 </html>
