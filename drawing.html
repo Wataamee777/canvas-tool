@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas Drawing</title>
+    <title>Canvas-tools</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -119,19 +119,19 @@
         // ペンの色変更
         function changeColor() {
             penColor = prompt("新しいペンの色を入力（例: #ff0000）", penColor);
-            document.cookie = `penColor=${penColor}; path=/;`;
+            localStorage.setItem("penColor", penColor); // localStorageに保存
         }
 
         // ペンの太さ変更
         function changeSize() {
             penSize = parseInt(prompt("ペンの太さを入力（例: 5）", penSize));
-            document.cookie = `penSize=${penSize}; path=/;`;
+            localStorage.setItem("penSize", penSize); // localStorageに保存
         }
 
         // キャンバスを消す
         function clearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            document.cookie = "canvasData=; path=/;"; // キャンバスデータのクッキーを削除
+            localStorage.removeItem("canvasData"); // キャンバスデータを削除
         }
 
         // 全画面モードのトグル
@@ -162,26 +162,24 @@
         // キャンバスを保存
         function saveCanvas() {
             const canvasData = canvas.toDataURL();
-            document.cookie = `canvasData=${canvasData}; path=/;`; // キャンバス画像データを保存
+            localStorage.setItem("canvasData", canvasData); // localStorageに保存
         }
 
-        // クッキーから設定を読み込み
+        // localStorageから設定を読み込み
         function loadSettings() {
-            const cookies = document.cookie.split(';');
-            cookies.forEach(cookie => {
-                const [name, value] = cookie.trim().split('=');
-                if (name === 'penColor') {
-                    penColor = value;
-                } else if (name === 'penSize') {
-                    penSize = parseInt(value);
-                } else if (name === 'canvasData') {
-                    const img = new Image();
-                    img.src = value;
-                    img.onload = function() {
-                        ctx.drawImage(img, 0, 0);
-                    };
-                }
-            });
+            // ペンの色と太さをlocalStorageから取得
+            penColor = localStorage.getItem("penColor") || "#000000";
+            penSize = parseInt(localStorage.getItem("penSize")) || 5;
+
+            // キャンバスの画像データをlocalStorageから取得
+            const canvasData = localStorage.getItem("canvasData");
+            if (canvasData) {
+                const img = new Image();
+                img.src = canvasData;
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
         }
 
         // 初期設定の読み込み
