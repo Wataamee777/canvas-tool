@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キャンバスツールサイト</title>
+    <style>
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>ようこそ！</h1>
+    <p>絵を描くアプリを使ってみてください。</p>
+    <a href="drawing.html">絵を描くアプリはこちら</a>
+    <br><br>
+    <label for="imageUpload">画像をアップロードして表示:</label>
+    <input type="file" id="imageUpload" accept="image/*">
+    <br><br>
+    <img id="uploadedImage" alt="アップロードされた画像" style="display:none;">
+
+    <script>
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = document.getElementById('uploadedImage');
+                    img.src = event.target.result;
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>
