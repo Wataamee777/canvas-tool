@@ -96,9 +96,14 @@
     <button id="stampTool" class="tool-btn">スタンプツール</button>
     
     <label for="imageUpload" class="custom-file-upload">
-        画像をアップロード
+        背景画像をアップロード
     </label>
     <input type="file" id="imageUpload" accept="image/*">
+    
+    <label for="stampUpload" class="custom-file-upload">
+        スタンプ画像をアップロード
+    </label>
+    <input type="file" id="stampUpload" accept="image/*">
     
     <canvas id="drawingCanvas" width="500" height="500"></canvas>
     <button id="downloadBtn">PNGをダウンロード</button>
@@ -189,6 +194,7 @@
             ctx.beginPath();
         }
 
+        // ダウンロードボタン
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const link = document.createElement('a');
             link.download = 'drawing.png';
@@ -196,6 +202,7 @@
             link.click();
         });
 
+        // 背景画像のアップロード
         document.getElementById('imageUpload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -211,8 +218,8 @@
             }
         });
 
-        // スタンプ画像を選択
-        document.getElementById('imageUpload').addEventListener('change', function(e) {
+        // スタンプ画像のアップロード
+        document.getElementById('stampUpload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
@@ -225,6 +232,57 @@
                 };
                 reader.readAsDataURL(file);
             }
+        });
+
+        // クッキーに保存する関数
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+        }
+
+        // クッキーから取得する関数
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        // 初期設定の読み込み（クッキーから）
+        window.onload = function() {
+            const color = getCookie('penColor');
+            const size = getCookie('penSize');
+            const image = getCookie('canvasImage');
+
+            if (color) colorPicker.value = color;
+            if (size) sizePicker.value = size;
+            if (image) {
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                };
+                img.src = image;
+            }
+        };
+
+        // 色と太さを変更したときに保存
+        colorPicker.addEventListener('input', function() {
+            setCookie('penColor', colorPicker.value, 7);
+        });
+        sizePicker.addEventListener('input', function() {
+            setCookie('penSize', sizePicker.value, 7);
+        });
+
+        // 描画を終了したときにクッキーに保存
+        window.addEventListener('beforeunload', function() {
+            setCookie('penColor', colorPicker.value, 7);
+            setCookie('penSize', sizePicker.value, 7);
+            setCookie('canvasImage', canvas.toDataURL(), 7); // 描画内容をクッキーに保存
         });
     </script>
 </body>
